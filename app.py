@@ -1,96 +1,67 @@
 import streamlit as st
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
-import openai
+import requests
+from datetime import datetime, timedelta
 
-# Spotify credentials from Streamlit secrets
+# Spotify API credentials
 client_id = st.secrets["spotify"]["client_id"]
 client_secret = st.secrets["spotify"]["client_secret"]
 
-# OpenAI API Key
-openai.api_key = st.secrets["openai"]["api_key"]
+# Global token variables
+access_token = None
+token_expiry_time = datetime.now()
 
-# Authenticate with Spotify
-auth_manager = SpotifyClientCredentials(
-    client_id=client_id,
-    client_secret=client_secret
-)
-sp = spotipy.Spotify(auth_manager=auth_manager)
+def get_spotify_token():
+    global access_token, token_expiry_time
+    if access_token is None or datetime.now() >= token_expiry_time:
+        url = "https://accounts.spotify.com/api/token"
+        headers = {
+            "Authorization": f"Basic {st.secrets['spotify']['client_id']}:{st.secrets['spotify']['client_secret']}"
+        }
+        data = {"grant_type": "client_credentials"}
+        response = requests.post(url, headers=headers, data=data)
+        if response.status_code == 200:
+            token_info = response.json()
+            access_token = token_info["access_token"]
+            token_expiry_time = datetime.now() + timedelta(seconds=token_info["expires_in"])
+        else:
+            st.error("Failed to retrieve Spotify token")
+    return access_token
 
-# Debug Spotify token
-st.write("Access Token:", auth_manager.get_access_token())
+def search_spotify(song, artist):
+    token = get_spotify_token()
+    url = f"https://api.spotify.com/v1/search?q=track:{song}%20artist:{artist}&type=track&limit=1"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error(f"Spotify Search Error: {response.status_code} - {response.text}")
+        return None
 
-# Title of the app
+def get_spotify_recommendations(track_id):
+    token = get_spotify_token()
+    url = f"https://api.spotify.com/v1/recommendations?limit=5&seed_tracks={track_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error(f"Spotify Recommendations Error: {response.status_code} - {response.text}")
+        return None
+
+# Streamlit App UI
 st.title("Music Recommendation App")
-
-# User inputs
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
 
-# Function to get recommendations from Spotify
-def get_spotify_recommendations(song, artist):
-    # Search for the track
-    results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
-    if not results["tracks"]["items"]:
-        st.warning("Could not find the track. Please check the song and artist names.")
-        return None  # Return None if no track is found
-
-    # Get the first result
-    track = results["tracks"]["items"][0]
-
-    # Check if the track is playable
-    if not track.get("is_playable", True):
-        st.warning("This track is not playable in your region.")
-        return None
-
-    # Extract the track ID
-    track_id = track["id"]
-
-    # Log search results for debugging
-    st.write("Spotify Search Results:", results)
-
-    # Get recommendations based on the track
-    try:
-        recommendations = sp.recommendations(seed_tracks=[track_id], limit=5)
-        tracks = []
-        for track in recommendations["tracks"]:
-            tracks.append({
-                "name": track["name"],
-                "artist": ", ".join([artist["name"] for artist in track["artists"]]),
-                "url": track["external_urls"]["spotify"],
-                "image": track["album"]["images"][0]["url"] if track["album"]["images"] else None,
-            })
-        return tracks
-    except Exception as e:
-        st.error(f"Error fetching recommendations: {str(e)}")
-        return None
-
-# Function to get additional recommendations from OpenAI
-def get_openai_recommendations(song, artist, recommendations):
-    track_descriptions = "\n".join([f"{track['name']} by {track['artist']}" for track in recommendations])
-    prompt = f"Here is a list of songs similar to '{song}' by '{artist}':\n{track_descriptions}\n\nCan you suggest 5 more obscure songs based on this list?"
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=150
-    )
-    return response["choices"][0]["text"].strip()
-
-# Display recommendations
 if st.button("Submit"):
-    recommendations = get_spotify_recommendations(song, artist)
-    if recommendations:
-        st.write("Here are some similar songs from Spotify:")
-        for track in recommendations:
-            st.markdown(f"**{track['name']}** by *{track['artist']}*")
-            if track["url"]:
-                st.markdown(f"[Listen here]({track['url']})")
-            if track["image"]:
-                st.image(track["image"], width=200)
-
-        # Get additional obscure tracks from OpenAI
-        st.write("Here are some additional obscure tracks:")
-        obscure_tracks = get_openai_recommendations(song, artist, recommendations)
-        st.markdown(obscure_tracks)
+    if song and artist:
+        search_results = search_spotify(song, artist)
+        if search_results:
+            track_id = search_results["tracks"]["items"][0]["id"]
+            st.write("Spotify Search Results:", search_results)
+            recommendations = get_spotify_recommendations(track_id)
+            if recommendations:
+                st.write("Recommendations:", recommendations)
     else:
-        st.write("No recommendations found. Try another song or artist.")
+        st.error("Please enter both a song and an artist.")
