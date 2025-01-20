@@ -19,6 +19,49 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
 # Title of the app
 st.title("Music Recommendation App")
 
+def get_spotify_recommendations(song, artist):
+    # Search for the track
+    results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
+    if not results["tracks"]["items"]:
+        return None  # Return None if no track is found
+
+    # Get the track ID of the first result
+    track_id = results["tracks"]["items"][0]["id"]
+
+    # Get recommendations based on the track
+    try:
+        recommendations = sp.recommendations(seed_tracks=[track_id], limit=5)
+        tracks = []
+        for track in recommendations["tracks"]:
+            tracks.append({
+                "name": track["name"],
+                "artist": ", ".join([artist["name"] for artist in track["artists"]]),
+                "url": track["external_urls"]["spotify"],
+                "image": track["album"]["images"][0]["url"] if track["album"]["images"] else None,
+            })
+        return tracks
+    except Exception as e:
+        st.error(f"Error fetching recommendations: {str(e)}")
+        return None
+if st.button("Submit"):
+    recommendations = get_spotify_recommendations(song, artist)
+    if recommendations:
+        st.write("Here are some similar songs from Spotify:")
+        for track in recommendations:
+            st.markdown(f"**{track['name']}** by *{track['artist']}*")
+            if track["url"]:
+                st.markdown(f"[Listen here]({track['url']})")
+            if track["image"]:
+                st.image(track["image"], width=200)
+
+        # Get additional obscure tracks from OpenAI
+        st.write("Here are some additional obscure tracks:")
+        obscure_tracks = get_openai_recommendations(song, artist, recommendations)
+        st.markdown(obscure_tracks)
+    else:
+        st.write("No recommendations found. Try another song or artist.")
+
+
 # User inputs
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
