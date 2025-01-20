@@ -1,21 +1,20 @@
-
 import streamlit as st
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+import openai
 
 # Spotify credentials from Streamlit secrets
 client_id = st.secrets["spotify"]["client_id"]
 client_secret = st.secrets["spotify"]["client_secret"]
+
+# OpenAI API Key
+openai.api_key = st.secrets["openai"]["api_key"]
 
 # Authenticate with Spotify
 sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
     client_id=client_id,
     client_secret=client_secret
 ))
-
-
-# Load API key from secrets
-api_key = st.secrets["lastfm"]["api_key"]
 
 # Title of the app
 st.title("Music Recommendation App")
@@ -24,6 +23,7 @@ st.title("Music Recommendation App")
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
 
+# Function to get recommendations from Spotify
 def get_spotify_recommendations(song, artist):
     # Search for the track
     results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
@@ -42,11 +42,8 @@ def get_spotify_recommendations(song, artist):
             })
         return tracks
     return None
-import openai
 
-# OpenAI API Key
-openai.api_key = st.secrets["openai"]["api_key"]
-
+# Function to get additional recommendations from OpenAI
 def get_openai_recommendations(song, artist, recommendations):
     track_descriptions = "\n".join([f"{track['name']} by {track['artist']}" for track in recommendations])
     prompt = f"Here is a list of songs similar to '{song}' by '{artist}':\n{track_descriptions}\n\nCan you suggest 5 more obscure songs based on this list?"
@@ -57,33 +54,21 @@ def get_openai_recommendations(song, artist, recommendations):
     )
     return response["choices"][0]["text"].strip()
 
-
+# Display recommendations
 if st.button("Submit"):
     recommendations = get_spotify_recommendations(song, artist)
     if recommendations:
-        st.write("Here are some similar songs:")
+        st.write("Here are some similar songs from Spotify:")
         for track in recommendations:
             st.markdown(f"**{track['name']}** by *{track['artist']}*")
             if track["url"]:
                 st.markdown(f"[Listen here]({track['url']})")
             if track["image"]:
                 st.image(track["image"], width=200)
+
+        # Get additional obscure tracks from OpenAI
+        st.write("Here are some additional obscure tracks:")
+        obscure_tracks = get_openai_recommendations(song, artist, recommendations)
+        st.markdown(obscure_tracks)
     else:
         st.write("No recommendations found.")
-
-
-# Display recommendations
-if st.button("Submit"):
-    recommendations = get_recommendations(song, artist)
-    if recommendations:
-        st.write("Here are some similar songs:")
-        for track in recommendations:
-            st.markdown(f"**{track['name']}** by *{track['artist']}*")  # Song and artist name
-            if track["url"]:
-                st.markdown(f"[Listen here]({track['url']})")  # Link to song
-            if track["image"]:
-                st.image(track["image"], width=200)  # Display image
-    else:
-        st.write("No recommendations found.")
-
-
