@@ -7,25 +7,38 @@ try:
 except KeyError:
     st.error("OpenAI API key not found. Please configure secrets.")
 
-# Function to get song recommendations using OpenAI
-def get_recommendations(song, artist):
+# Function to generate song recommendations
+def get_song_recommendations(song, artist):
     try:
+        # Query OpenAI for recommendations
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a music recommendation assistant."},
-                {"role": "user", "content": f"I like the song '{song}' by {artist}. Can you recommend similar songs?"}
+                {"role": "system", "content": "You are a music expert recommending obscure songs."},
+                {"role": "user", "content": f"I love the song '{song}' by {artist}. Can you recommend 5 obscure but similar songs? Provide them as a list with brief descriptions."}
             ]
         )
+        # Extract recommendations
         recommendations = response["choices"][0]["message"]["content"]
         return recommendations
     except Exception as e:
-        return f"Error fetching recommendations from OpenAI: {str(e)}"
+        return f"Error fetching recommendations: {str(e)}"
 
-# Streamlit app UI
+# Function to convert song titles to clickable links (YouTube or Spotify)
+def generate_links(recommendations):
+    song_links = []
+    for line in recommendations.split("\n"):
+        if line.strip():
+            song_name = line.strip()
+            query = song_name.replace(" ", "+")
+            link = f"https://www.youtube.com/results?search_query={query}"
+            song_links.append(f"- [{song_name}]({link})")
+    return "\n".join(song_links)
+
+# Streamlit app
 st.title("Music Recommendation App")
 
-# Input fields
+# User input
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
 
@@ -33,8 +46,10 @@ artist = st.text_input("Enter the artist:")
 if st.button("Submit"):
     if song and artist:
         st.subheader(f"Recommendations for '{song}' by {artist}:")
-        recommendations = get_recommendations(song, artist)
-        st.write(recommendations)
+        recommendations = get_song_recommendations(song, artist)
+        if "Error" not in recommendations:
+            st.markdown(generate_links(recommendations), unsafe_allow_html=True)
+        else:
+            st.error(recommendations)
     else:
-        st.error("Please enter both a song and an artist.")
-
+        st.error("Please provide both song and artist names.")
