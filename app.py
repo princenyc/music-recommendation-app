@@ -61,6 +61,7 @@ if st.button("Submit"):
     else:
         st.write("No recommendations found. Try another song or artist.")
 
+st.write(results)  # Check the response from Spotify's search
 
 # User inputs
 song = st.text_input("Enter a song:")
