@@ -11,10 +11,14 @@ client_secret = st.secrets["spotify"]["client_secret"]
 openai.api_key = st.secrets["openai"]["api_key"]
 
 # Authenticate with Spotify
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+auth_manager = SpotifyClientCredentials(
     client_id=client_id,
     client_secret=client_secret
-))
+)
+sp = spotipy.Spotify(auth_manager=auth_manager)
+
+# Debug Spotify token
+st.write("Access Token:", auth_manager.get_access_token())
 
 # Title of the app
 st.title("Music Recommendation App")
