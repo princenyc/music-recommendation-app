@@ -2,26 +2,30 @@ import openai
 import streamlit as st
 
 # OpenAI API key
-openai.api_key = "your_openai_api_key"
+openai.api_key = "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"
 
 def get_music_recommendations(song, artist):
     """
     Use OpenAI API to get music recommendations based on the input song and artist.
     """
     try:
-        prompt = (
-            f"I am creating a music recommendation app. A user entered the song '{song}' by the artist '{artist}'. "
-            "Suggest 5 obscure but high-quality songs similar in sound or theme to this input. "
-            "Provide each recommendation as 'Song Title by Artist'."
-        )
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a music expert that provides obscure yet high-quality song recommendations based on user input.",
+            },
+            {
+                "role": "user",
+                "content": f"A user entered the song '{song}' by the artist '{artist}'. Suggest 5 obscure but high-quality songs similar in sound or theme to this input. Provide each recommendation as 'Song Title by Artist'.",
+            },
+        ]
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
             max_tokens=150,
             temperature=0.7,
-            n=1,
         )
-        recommendations = response.choices[0].text.strip().split("\n")
+        recommendations = response.choices[0].message["content"].strip().split("\n")
         return recommendations
     except Exception as e:
         st.error(f"Error fetching recommendations from OpenAI: {e}")
