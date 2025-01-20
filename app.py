@@ -24,6 +24,26 @@ st.title("Music Recommendation App")
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
 
+def get_spotify_recommendations(song, artist):
+    # Search for the track
+    results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
+    if results["tracks"]["items"]:
+        track_id = results["tracks"]["items"][0]["id"]
+
+        # Get recommendations based on the track
+        recommendations = sp.recommendations(seed_tracks=[track_id], limit=5)
+        tracks = []
+        for track in recommendations["tracks"]:
+            tracks.append({
+                "name": track["name"],
+                "artist": ", ".join([artist["name"] for artist in track["artists"]]),
+                "url": track["external_urls"]["spotify"],
+                "image": track["album"]["images"][0]["url"] if track["album"]["images"] else None,
+            })
+        return tracks
+    return None
+
+
 # API call function
 def get_recommendations(song, artist):
     url = "http://ws.audioscrobbler.com/2.0/"
