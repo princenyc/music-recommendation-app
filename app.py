@@ -1,5 +1,18 @@
+
 import streamlit as st
-import requests
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+
+# Spotify credentials from Streamlit secrets
+client_id = st.secrets["spotify"]["client_id"]
+client_secret = st.secrets["spotify"]["client_secret"]
+
+# Authenticate with Spotify
+sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+    client_id=client_id,
+    client_secret=client_secret
+))
+
 
 # Load API key from secrets
 api_key = st.secrets["lastfm"]["api_key"]
