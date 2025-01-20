@@ -1,4 +1,1 @@
-spotipy
-openai
-requests
-openai>=0.28.0
+pip install openai --upgrade
