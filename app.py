@@ -42,6 +42,20 @@ def get_spotify_recommendations(song, artist):
             })
         return tracks
     return None
+import openai
+
+# OpenAI API Key
+openai.api_key = st.secrets["openai"]["api_key"]
+
+def get_openai_recommendations(song, artist, recommendations):
+    track_descriptions = "\n".join([f"{track['name']} by {track['artist']}" for track in recommendations])
+    prompt = f"Here is a list of songs similar to '{song}' by '{artist}':\n{track_descriptions}\n\nCan you suggest 5 more obscure songs based on this list?"
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=150
+    )
+    return response["choices"][0]["text"].strip()
 
 
 if st.button("Submit"):
