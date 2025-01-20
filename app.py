@@ -28,6 +28,11 @@ artist = st.text_input("Enter the artist:")
 if st.button("Submit"):
     if song and artist:
         st.subheader(f"Recommendations for {song} by {artist}:")
+
+import streamlit as st
+
+st.write(st.secrets["openai"]["api_key"])
+        
         recommendations = get_recommendations(song, artist)
         st.write(recommendations)
     else:
