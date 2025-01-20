@@ -31,11 +31,11 @@ def get_spotify_recommendations(song, artist):
         st.warning("Could not find the track. Please check the song and artist names.")
         return None  # Return None if no track is found
 
-    # Log search results for debugging
-    st.write("Spotify Search Results:", results)
-
     # Get the track ID of the first result
     track_id = results["tracks"]["items"][0]["id"]
+
+    # Log search results for debugging
+    st.write("Spotify Search Results:", results)
 
     # Get recommendations based on the track
     try:
@@ -82,3 +82,4 @@ if st.button("Submit"):
         st.markdown(obscure_tracks)
     else:
         st.write("No recommendations found. Try another song or artist.")
+
