@@ -2,6 +2,3 @@ spotipy
 openai
 requests
 openai>=0.28.0
-
-pip show openai
-
