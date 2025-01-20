@@ -1,1 +1,2 @@
-pip install openai --upgrade
+openai>=0.27.0
+streamlit
