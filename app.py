@@ -1,10 +1,10 @@
-import openai
 import streamlit as st
+import openai
 
-# Set your OpenAI API key
-openai.api_key = "your_openai_api_key"
+# Load API key from Streamlit secrets
+openai.api_key = st.secrets["openai"]["api_key"]
 
-# Function to fetch recommendations
+# Function to get song recommendations using OpenAI
 def get_recommendations(song, artist):
     try:
         # Use the latest ChatCompletion endpoint
@@ -15,24 +15,22 @@ def get_recommendations(song, artist):
                 {"role": "user", "content": f"I like the song '{song}' by {artist}. Can you recommend similar songs?"}
             ]
         )
-        recommendations = response['choices'][0]['message']['content']
+        recommendations = response["choices"][0]["message"]["content"]
         return recommendations
     except Exception as e:
         return f"Error fetching recommendations from OpenAI: {e}"
 
-# Streamlit app
+# Streamlit app UI
 st.title("Music Recommendation App")
 
+# Input fields
 song = st.text_input("Enter a song:")
 artist = st.text_input("Enter the artist:")
+
+# Submit button
 if st.button("Submit"):
     if song and artist:
-        st.subheader(f"Recommendations for {song} by {artist}:")
-
-import streamlit as st
-
-st.write(st.secrets["openai"]["api_key"])
-        
+        st.subheader(f"Recommendations for '{song}' by {artist}:")
         recommendations = get_recommendations(song, artist)
         st.write(recommendations)
     else:
