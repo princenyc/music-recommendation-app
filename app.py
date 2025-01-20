@@ -19,11 +19,20 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
 # Title of the app
 st.title("Music Recommendation App")
 
+# User inputs
+song = st.text_input("Enter a song:")
+artist = st.text_input("Enter the artist:")
+
+# Function to get recommendations from Spotify
 def get_spotify_recommendations(song, artist):
     # Search for the track
     results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
     if not results["tracks"]["items"]:
+        st.warning("Could not find the track. Please check the song and artist names.")
         return None  # Return None if no track is found
+
+    # Log search results for debugging
+    st.write("Spotify Search Results:", results)
 
     # Get the track ID of the first result
     track_id = results["tracks"]["items"][0]["id"]
@@ -43,49 +52,6 @@ def get_spotify_recommendations(song, artist):
     except Exception as e:
         st.error(f"Error fetching recommendations: {str(e)}")
         return None
-if st.button("Submit"):
-    recommendations = get_spotify_recommendations(song, artist)
-    if recommendations:
-        st.write("Here are some similar songs from Spotify:")
-        for track in recommendations:
-            st.markdown(f"**{track['name']}** by *{track['artist']}*")
-            if track["url"]:
-                st.markdown(f"[Listen here]({track['url']})")
-            if track["image"]:
-                st.image(track["image"], width=200)
-
-        # Get additional obscure tracks from OpenAI
-        st.write("Here are some additional obscure tracks:")
-        obscure_tracks = get_openai_recommendations(song, artist, recommendations)
-        st.markdown(obscure_tracks)
-    else:
-        st.write("No recommendations found. Try another song or artist.")
-
-st.write(results)  # Check the response from Spotify's search
-
-# User inputs
-song = st.text_input("Enter a song:")
-artist = st.text_input("Enter the artist:")
-
-# Function to get recommendations from Spotify
-def get_spotify_recommendations(song, artist):
-    # Search for the track
-    results = sp.search(q=f"track:{song} artist:{artist}", type="track", limit=1)
-    if results["tracks"]["items"]:
-        track_id = results["tracks"]["items"][0]["id"]
-
-        # Get recommendations based on the track
-        recommendations = sp.recommendations(seed_tracks=[track_id], limit=5)
-        tracks = []
-        for track in recommendations["tracks"]:
-            tracks.append({
-                "name": track["name"],
-                "artist": ", ".join([artist["name"] for artist in track["artists"]]),
-                "url": track["external_urls"]["spotify"],
-                "image": track["album"]["images"][0]["url"] if track["album"]["images"] else None,
-            })
-        return tracks
-    return None
 
 # Function to get additional recommendations from OpenAI
 def get_openai_recommendations(song, artist, recommendations):
@@ -115,4 +81,4 @@ if st.button("Submit"):
         obscure_tracks = get_openai_recommendations(song, artist, recommendations)
         st.markdown(obscure_tracks)
     else:
-        st.write("No recommendations found.")
+        st.write("No recommendations found. Try another song or artist.")
