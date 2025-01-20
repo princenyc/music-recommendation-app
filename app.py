@@ -1,12 +1,13 @@
 import openai
 import streamlit as st
 
-# Set OpenAI API key
+# Set your OpenAI API key
 openai.api_key = "your_openai_api_key"
 
+# Function to fetch recommendations
 def get_recommendations(song, artist):
     try:
-        # Use the ChatCompletion endpoint
+        # Use the latest ChatCompletion endpoint
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
