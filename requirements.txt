@@ -1,4 +1,6 @@
 spotipy
 openai
 requests
+openai>=0.28.0
+
 
