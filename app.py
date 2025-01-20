@@ -31,8 +31,16 @@ def get_spotify_recommendations(song, artist):
         st.warning("Could not find the track. Please check the song and artist names.")
         return None  # Return None if no track is found
 
-    # Get the track ID of the first result
-    track_id = results["tracks"]["items"][0]["id"]
+    # Get the first result
+    track = results["tracks"]["items"][0]
+
+    # Check if the track is playable
+    if not track.get("is_playable", True):
+        st.warning("This track is not playable in your region.")
+        return None
+
+    # Extract the track ID
+    track_id = track["id"]
 
     # Log search results for debugging
     st.write("Spotify Search Results:", results)
@@ -82,4 +90,3 @@ if st.button("Submit"):
         st.markdown(obscure_tracks)
     else:
         st.write("No recommendations found. Try another song or artist.")
-
