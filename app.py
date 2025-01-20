@@ -44,31 +44,18 @@ def get_spotify_recommendations(song, artist):
     return None
 
 
-# API call function
-def get_recommendations(song, artist):
-    url = "http://ws.audioscrobbler.com/2.0/"
-    params = {
-        "method": "track.getsimilar",
-        "artist": artist,
-        "track": song,
-        "api_key": api_key,
-        "format": "json",
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        if "similartracks" in data:
-            tracks = data["similartracks"]["track"]
-            recommendations = []
-            for track in tracks[:5]:  # Limit to top 5 recommendations
-                recommendations.append({
-                    "name": track["name"],
-                    "artist": track["artist"]["name"],
-                    "url": track["url"],  # Link to listen
-                    "image": track["image"][-1]["#text"] if track["image"] else None,  # Largest image
-                })
-            return recommendations
-    return None
+if st.button("Submit"):
+    recommendations = get_spotify_recommendations(song, artist)
+    if recommendations:
+        st.write("Here are some similar songs:")
+        for track in recommendations:
+            st.markdown(f"**{track['name']}** by *{track['artist']}*")
+            if track["url"]:
+                st.markdown(f"[Listen here]({track['url']})")
+            if track["image"]:
+                st.image(track["image"], width=200)
+    else:
+        st.write("No recommendations found.")
 
 
 # Display recommendations
